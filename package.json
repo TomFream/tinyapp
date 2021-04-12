@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/TomFream/tinyapp/issues"
   },
-  "homepage": "https://github.com/TomFream/tinyapp#readme"
+  "homepage": "https://github.com/TomFream/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
