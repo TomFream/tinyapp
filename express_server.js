@@ -31,6 +31,13 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+// POST /urls/:shortURL/delete
+app.post("/urls/:shortUrl/delete", (req, res) => {
+  console.log("delete request: ", req.body);
+  delete urlDatabase[req.body.shortURL];
+  res.redirect('/urls');
+});
+
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
