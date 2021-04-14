@@ -21,6 +21,7 @@ const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+const urlDatabaseKeys = Object.keys(urlDatabase);
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -38,6 +39,15 @@ app.post("/urls/:shortUrl/delete", (req, res) => {
   res.redirect('/urls');
 });
 
+app.post("/urls/:url/edit", (req, res) => {
+  console.log("Updated url: ", req.body.longURL);
+  console.log("Requesting shortURL: ", req.params.url);
+  const urlToUpdate = req.params.url;
+  const newURL = req.body.longURL;
+  urlDatabase[urlToUpdate] = newURL;
+  res.redirect('/urls');
+});
+
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
@@ -51,8 +61,12 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
-  res.render("urls_show", templateVars);
+  if (urlDatabase[req.params.shortURL]) {
+    const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+    res.render("urls_show", templateVars);
+    } else {
+      res.send("Error: url not")
+    }
 });
 
 app.get("/u/:shortURL", (req, res) => {
