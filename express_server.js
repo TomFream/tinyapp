@@ -2,11 +2,16 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require('cookie-parser')
+// const cookieParser = require('cookie-parser')
+const cookieSession = require('cookie-session')
 const bcrypt = require('bcrypt');
 
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['Test key one', 'Test key two'],
+}))
+// app.use(cookieParser());
 app.set("view engine", "ejs");
 
 
@@ -74,7 +79,7 @@ app.get("/", (req, res) => {
 // Login/logout and registration handlers
 app.get("/register", (req, res) => {
   const templateVars = {
-    user: users[req.cookies["user_id"]]
+    user: users[req.session.user_id]
   };
   res.render("registration", templateVars);
 });
@@ -104,7 +109,8 @@ app.post("/register", (req, res) => {
     password: hashedPassword
   };
   console.log("Users object: ", users);
-  res.cookie('user_id', newUserId);
+  // res.cookie('user_id', newUserId);
+  req.session.user_id = newUserId;
   res.redirect("/urls")
 });
 
@@ -113,7 +119,8 @@ app.post("/login", (req, res) => {
   
   const user_id = emailLookup(req.body.email);
   if (user_id && bcrypt.compareSync(req.body.password, user_id.password)){                                   // user_id.password === req.body.password 
-    res.cookie('user_id', user_id.id);
+    // res.cookie('user_id', user_id.id);
+    req.session.user_id = user_id.id;
     res.redirect('/urls');
     return;  
   }
@@ -124,28 +131,28 @@ app.post("/login", (req, res) => {
 
 app.get("/login", (req, res) => {
   const templateVars = {
-    user: users[req.cookies["user_id"]]
+    user: users[req.session.user_id]
   }
   res.render("login", templateVars);
 });
 
 app.post("/logout", (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect('/urls');
 });
 
 // Url pages
 app.get("/urls", (req, res) => {
   const templateVars = { 
-    user: users[req.cookies["user_id"]],
-    urls: urlsForUser(req.cookies["user_id"]) };
-    console.log("/urls from urlsForUser: ", urlsForUser(req.cookies["user_id"]))
+    user: users[req.session.user_id],
+    urls: urlsForUser(req.session.user_id) };
+    console.log("/urls from urlsForUser: ", urlsForUser(req.session.user_id))
   res.render("urls_index", templateVars);
 });
 
 app.post("/urls/:shortUrl/delete", (req, res) => {
   console.log("delete request: ", req.body);
-  if (req.cookies["user_id"] === urlDatabase[urlToUpdate].userID) {
+  if (req.session.user_id === urlDatabase[urlToUpdate].userID) {
     delete urlDatabase[req.body.shortURL];
   }
   res.redirect('/urls');
@@ -156,7 +163,7 @@ app.post("/urls/:url/edit", (req, res) => {
   // console.log("Requesting shortURL: ", req.params.url);
   const urlToUpdate = req.params.url;
   const newURL = req.body.longURL;
-  if (req.cookies["user_id"] === urlDatabase[urlToUpdate].userID) {
+  if (req.session.user_id === urlDatabase[urlToUpdate].userID) {
     urlDatabase[urlToUpdate].longURL = newURL;
   };
   res.redirect('/urls');
@@ -164,7 +171,7 @@ app.post("/urls/:url/edit", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    user: users[req.cookies["user_id"]]
+    user: users[req.session.user_id]
   }
   if(!templateVars.user) {
     res.redirect("/login");
@@ -176,7 +183,7 @@ app.post("/urls", (req, res) => {
   const newShortUrl = generateRandomString();
   urlDatabase[newShortUrl] = {
     longURL: req.body.longURL,
-    userID: req.cookies["user_id"]
+    userID: req.session.user_id
   };
   console.log(urlDatabase);  // Log the POST request body to the console
   // res.send("Ok");         // Respond with 'Ok' (we will replace this)
@@ -186,7 +193,7 @@ app.post("/urls", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL]) {
     const templateVars = { 
-      user: users[req.cookies["user_id"]],
+      user: users[req.session.user_id],
       shortURL: req.params.shortURL, 
       longURL: urlDatabase[req.params.shortURL].longURL};
     res.render("urls_show", templateVars);
