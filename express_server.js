@@ -101,6 +101,13 @@ app.post("/login", (req, res) => {
   res.redirect('/urls')
 });
 
+app.get("/login", (req, res) => {
+  const templateVars = {
+    user: users[req.cookies["user_id"]]
+  }
+  res.render("login", templateVars);
+});
+
 app.post("/logout", (req, res) => {
   res.clearCookie('user_id');
   res.redirect('/urls');
