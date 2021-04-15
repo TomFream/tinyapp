@@ -42,7 +42,7 @@ const emailLookup = function (email) {
   const userKeys = Object.keys(users);
   for (const key of userKeys) {
     if (users[key].email === email) {
-      return users[key].id;
+      return users[key];
     }
   }
   return false;
@@ -93,12 +93,14 @@ app.post("/login", (req, res) => {
   console.log("Body of login request: ", req.body);
   
   const user_id = emailLookup(req.body.email);
-  if (user_id){ 
-    res.cookie('user_id', user_id);
+  if (user_id && user_id.password === req.body.password){ 
+    res.cookie('user_id', user_id.id);
     res.redirect('/urls');
     return;  
   }
-  res.redirect('/urls')
+  return res.status(403).send(
+    '403: Authentication Falied'
+ );
 });
 
 app.get("/login", (req, res) => {
