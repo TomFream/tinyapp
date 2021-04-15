@@ -10,8 +10,8 @@ app.set("view engine", "ejs");
 
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {longURL: "http://www.lighthouselabs.ca", userID: "userRandomID"},
+  "9sm5xK": {longURL: "http://www.google.com", userID: "user2RandomID"}
 };
 
 const users = { 
@@ -24,6 +24,11 @@ const users = {
     id: "user2RandomID", 
     email: "user2@example.com", 
     password: "dishwasher-funk"
+  },
+  "tom": {
+    id: "tom",
+    email: "test@test.com",
+    password:"test"
   }
 };
 
@@ -46,6 +51,18 @@ const emailLookup = function (email) {
     }
   }
   return false;
+};
+
+const databaseParser = function (userID) {
+  const databaseKeys = Object.keys(urlDatabase);
+  let parsedDatabase = {};
+
+  for (const key of databaseKeys) {
+    if (urlDatabase[key].userID === userID) {
+      parsedDatabase[key] = urlDatabase[key];
+    }
+  }
+  return parsedDatabase;
 };
 
 
@@ -119,7 +136,8 @@ app.post("/logout", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = { 
     user: users[req.cookies["user_id"]],
-    urls: urlDatabase };
+    urls: databaseParser(req.cookies["user_id"]) };
+    console.log("/urls from databaseParser: ", databaseParser(req.cookies["user_id"]))
   res.render("urls_index", templateVars);
 });
 
@@ -142,12 +160,18 @@ app.get("/urls/new", (req, res) => {
   const templateVars = {
     user: users[req.cookies["user_id"]]
   }
+  if(!templateVars.user) {
+    res.redirect("/login");
+  }
   res.render("urls_new", templateVars);
 });
 
 app.post("/urls", (req, res) => {
   const newShortUrl = generateRandomString();
-  urlDatabase[newShortUrl] = req.body.longURL;
+  urlDatabase[newShortUrl] = {
+    longURL: req.body.longURL,
+    userID: req.cookies["user_id"]
+  };
   console.log(urlDatabase);  // Log the POST request body to the console
   // res.send("Ok");         // Respond with 'Ok' (we will replace this)
   res.redirect(`/urls/${newShortUrl}`);
@@ -158,7 +182,7 @@ app.get("/urls/:shortURL", (req, res) => {
     const templateVars = { 
       user: users[req.cookies["user_id"]],
       shortURL: req.params.shortURL, 
-      longURL: urlDatabase[req.params.shortURL]};
+      longURL: urlDatabase[req.params.shortURL].longURL};
     res.render("urls_show", templateVars);
     } else {
       res.send("Error: url not")
@@ -166,7 +190,7 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   res.redirect(longURL);
 });
 
