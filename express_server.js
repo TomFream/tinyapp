@@ -53,12 +53,12 @@ const emailLookup = function (email) {
   return false;
 };
 
-const databaseParser = function (userID) {
+const urlsForUser = function (id) {
   const databaseKeys = Object.keys(urlDatabase);
   let parsedDatabase = {};
 
   for (const key of databaseKeys) {
-    if (urlDatabase[key].userID === userID) {
+    if (urlDatabase[key].userID === id) {
       parsedDatabase[key] = urlDatabase[key];
     }
   }
@@ -136,23 +136,27 @@ app.post("/logout", (req, res) => {
 app.get("/urls", (req, res) => {
   const templateVars = { 
     user: users[req.cookies["user_id"]],
-    urls: databaseParser(req.cookies["user_id"]) };
-    console.log("/urls from databaseParser: ", databaseParser(req.cookies["user_id"]))
+    urls: urlsForUser(req.cookies["user_id"]) };
+    console.log("/urls from urlsForUser: ", urlsForUser(req.cookies["user_id"]))
   res.render("urls_index", templateVars);
 });
 
 app.post("/urls/:shortUrl/delete", (req, res) => {
   console.log("delete request: ", req.body);
-  delete urlDatabase[req.body.shortURL];
+  if (req.cookies["user_id"] === urlDatabase[urlToUpdate].userID) {
+    delete urlDatabase[req.body.shortURL];
+  }
   res.redirect('/urls');
 });
 
 app.post("/urls/:url/edit", (req, res) => {
-  console.log("Updated url: ", req.body.longURL);
-  console.log("Requesting shortURL: ", req.params.url);
+  // console.log("Updated url: ", req.body.longURL);
+  // console.log("Requesting shortURL: ", req.params.url);
   const urlToUpdate = req.params.url;
   const newURL = req.body.longURL;
-  urlDatabase[urlToUpdate] = newURL;
+  if (req.cookies["user_id"] === urlDatabase[urlToUpdate].userID) {
+    urlDatabase[urlToUpdate].longURL = newURL;
+  };
   res.redirect('/urls');
 });
 
