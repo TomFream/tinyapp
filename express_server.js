@@ -1,10 +1,10 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const { getUserByEmail } = require("./helpers");
+const { getUserByEmail, generateRandomString } = require("./helpers");
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080;
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
@@ -19,25 +19,16 @@ const urlDatabase = {
 };
 
 const users = {
-  JK4biq: {       //Testing user - Password: test
+  //Testing user - Password: test
+  JK4biq: {
     id: 'JK4biq',
     email: 'test@test',
     password: '$2b$10$zGBN6gC6OTE4XWZDnrYfXOvFdf3Ya8/z/.W6U22RFwlKreJjtAefy'
   }
 };
 
-const generateRandomString = function() {   // Creates random 6 character string for user id and short URL
-  let randomString = [];
-  let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let charactersLength = characters.length;
-  
-  for (let i = 0; i < 6; i++) {
-    randomString.push(characters.charAt(Math.floor(Math.random() * charactersLength)));
-  }
-  return randomString.join('');
-};
-
-const urlsForUser = function(id) {    // Returns URLs from database that belong to specified user
+// Returns URLs from database that belong to specified user
+const urlsForUser = function(id) {
   const databaseKeys = Object.keys(urlDatabase);
   let parsedDatabase = {};
 
@@ -129,7 +120,7 @@ app.get("/urls", (req, res) => {
 });
 
 app.post("/urls/:shortUrl/delete", (req, res) => {
-  if (req.session.user_id === urlDatabase[req.params.url].userID) {
+  if (req.session.user_id === urlDatabase[req.body.shortURL].userID) {
     delete urlDatabase[req.body.shortURL];
   }
   res.redirect('/urls');
@@ -194,7 +185,6 @@ app.get("/u/:shortURL", (req, res) => {
 });
 
 app.get("/urls.json", (req, res) => {
-  // res.json(urlDatabase);
   res.json(urlsForUser(req.session.user_id));
 });
 
